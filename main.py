@@ -28,7 +28,6 @@ class dice(pygame.sprite.Sprite):
 
     def dice_roll(self):
         roll = random.randint(1, 6)
-
         return roll
 roll = dice()
 
@@ -74,7 +73,7 @@ class PropertyButton(pygame.sprite.Sprite):
          32: (695, 105), 33: (694, 170), 35: (695, 300), 38: (695, 498), 40: (695, 629)}
         return property_positions[self.position]
     def mouseOn(self, mousePos):
-        if position in self.vertical_buttons:
+        if self.position in self.vertical_buttons:
             if self.get_position(self.position)[0] < mousePos[0] < self.get_position(self.position)[0] + 65 and self.get_position(self.position)[1] < mousePos[1] < self.get_position(self.position)[1] + 110:
                 return True
         else:
@@ -373,7 +372,7 @@ class Player(pygame.sprite.Sprite):
         return self.position
     
     def add_position(self, addValue):
-        self.position = self.position + addValue;
+        self.position = self.position + addValue
         if self.position > 40:
             self.position = self.position - 40
             self.cash += 200
@@ -436,11 +435,12 @@ clicked = False
 actionChosen = False
 
 
-def playerTurn(player, rolls):
+async def playerTurn(player, rolls):
     global moneyText1
     global moneyText2
     global gameAnnouncementText
     global gameAnnouncement_rect
+    global actionChosen
     all_sprites.remove(roll)
 
     if player.injail:
@@ -473,7 +473,7 @@ def playerTurn(player, rolls):
             player.doublesCounter = 0
         #if not 3 consecutive doubles
         else:
-            roll_sum = sum(rolls)
+            roll_sum = rolls[0] + rolls[1]
             player.add_position(roll_sum)
             player.move(player.position_to_coordinates(player.position))
             
@@ -621,6 +621,7 @@ def playerTurn(player, rolls):
                             rentToPay = opponentProperty.get_rent_cost()
                             player.cash -= rentToPay
                             print(f"paid {rentToPay} for rent")
+            
             #if landed in an unowned property/railroad space(later to add utilties)
             if player.position in property_objects:
                 actionChosen = True
@@ -635,10 +636,10 @@ def playerTurn(player, rolls):
                 clickedAction = False
                 while actionChosen:
                     mousePos = pygame.mouse.get_pos()
-                    event = pygame.event.wait()
+                    for event in pygame.event.get():
                     #if the x button is hit, quit
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
                     #if buy button is hit
                     if 250 <= mousePos[0] <= 350 and 300 <= mousePos[1] <= 400: 
                         if pygame.mouse.get_pressed()[0] == True:
@@ -658,7 +659,7 @@ def playerTurn(player, rolls):
                                 player.properties.append(property_objects[player.position])
                                 railroadPositions = [6,16,26,36]
                                 if player.position in railroadPositions:
-                                     player.properties[-1].house_count += 1;
+                                     player.properties[-1].house_count += 1
                                 property_objects.pop(player.position)
                     #if auction button is hit(do nothing for now) 
                     if 450 <= mousePos[0] <= 550 and 300 <= mousePos[1] <= 400: 
@@ -671,8 +672,8 @@ def playerTurn(player, rolls):
                                 #remove button sprites
                                 all_sprites.remove(auctionButton)
                                 all_sprites.remove(buyButton)
-                    #await asyncio.sleep(0)  # Let other tasks run
-                  
+                    await asyncio.sleep(0)  # This line is critical; ensure you keep the sleep time at 0
+            
     all_sprites.add(roll)
     for entity in all_sprites:
         window.blit(entity.surf, entity.rect)
@@ -694,9 +695,6 @@ def playerTurn(player, rolls):
         for entity in all_sprites:
             window.blit(entity.surf, entity.rect)
         pygame.display.update()
-        
-        
-        
         
         while waitToEndTurn:
             mousePos = pygame.mouse.get_pos()
@@ -730,11 +728,8 @@ def playerTurn(player, rolls):
                                     if p.house_count >= 5:
                                         p.house_count = 0
                                         p.hotel_count = 1
-            #await asyncio.sleep(0)  # Let other tasks run
-                                    
-                            
-                    
-
+            await asyncio.sleep(0)  # Let other tasks run
+            
             if 200 <= mousePos[0] <= 400 and 450 <= mousePos[1] <= 550: 
                 if pygame.mouse.get_pressed()[0] == True:
                     endTurnClicked = True
@@ -745,15 +740,13 @@ def playerTurn(player, rolls):
                         waitToEndTurn = False
         for i in range(len(buttonsToDraw)):
             all_sprites.remove(buttonsToDraw[i])
-
-
-
+            
 #list of all player objects
 players = [P1,P2]
 playerCount = len(players)
-turnCounter = 0;
+turnCounter = 0
             
-
+            
 
 async def main():
     global clicked
@@ -762,12 +755,12 @@ async def main():
     global players
     global playerCount
     global turnCounter
-    
+    global rolls
     
     while True:
         window.blit(bg_img,(0,0))
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == pygame.QUIT:
                 pygame.quit()
                 break
         #add money info   
@@ -777,7 +770,8 @@ async def main():
         window.blit(gameAnnouncementText, gameAnnouncement_rect)
         #mouse coords
         mousePos = pygame.mouse.get_pos()
-        gameAnnouncementText = font.render(f"{mousePos[0]}, {mousePos[1]}", True, (0,0,0))
+        rolls = [roll.dice_roll(), roll.dice_roll()]  
+        gameAnnouncementText = font.render(f"{rolls[0] == rolls[1]}", True, (0,0,0))
         gameAnnouncement_rect = gameAnnouncementText.get_rect()
         window.blit(gameAnnouncementText, gameAnnouncement_rect)
         #if hit button
@@ -789,24 +783,21 @@ async def main():
                 clicked = True
             if clicked:
                 
-
                 #if released button, do action
 
                 if pygame.mouse.get_pressed()[0] == False:
                     clicked = False
-                    gameAnnouncementText = font.render(f"game is broken", True, (0,0,0))
-                    gameAnnouncement_rect = gameAnnouncementText.get_rect()
-                    window.blit(gameAnnouncementText, gameAnnouncement_rect)
+                    
+                    gameAnnouncementText = font.render(f"   ", True, (0,0,0))
 
                     #get rid of game announcement text
 
                     #roll twice
-                    
                     rolls = [roll.dice_roll(), roll.dice_roll()]  
                     #print (rolls)
                     #turn counter for keeping track of whose turn it is
                     #playerTurn = turn action function
-                    playerTurn(players[turnCounter], rolls)
+                    asyncio.run(playerTurn(players[turnCounter], rolls))
                     #print(players[turnCounter].list_properties())
                     if players[turnCounter].rolledDoubles:
                         turnCounter -= 1
