@@ -53,21 +53,26 @@ auctionButton = auction()
 
 
 class house(pygame.sprite.Sprite):
-    def __init__(self, position, house_count):
+    def __init__(self, position, house_count, hotel_count):
         super().__init__()
         
         self.surfList = []
         self.rectList = []
         
-        
         self.position = position
         self.house_count = house_count
-        for i in range(house_count):
-            self.surfList.append(pygame.Surface((10, 10)))
-            self.surfList[i].fill((0,255,0))
-            leftPosition = self.get_position()
-            leftPosition = (leftPosition[0] + 10, leftPosition[1] + (i*13) + 10)
-            self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
+        self.hotel_count = hotel_count
+        if self.hotel_count == 1:
+            self.surfList = [pygame.Surface((20,15))]
+            self.surfList[0].fill((255,0,0))
+            self.rectList = [self.surfList[0].get_rect(topleft = (self.get_position()[0] + 10, self.get_position()[1] + 10))]
+        else:
+            for i in range(house_count):
+                self.surfList.append(pygame.Surface((10, 10)))
+                self.surfList[i].fill((0,255,0))
+                leftPosition = self.get_position()
+                leftPosition = (leftPosition[0] + 10, leftPosition[1] + (i*13) + 10)
+                self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
             
     def get_position(self):
         # Define positions for different Monopoly properties
@@ -76,8 +81,6 @@ class house(pygame.sprite.Sprite):
          22: (105, 0), 24: (236, 0), 25: (301, 0), 26: (367, 0), 27: (434, 0), 28: (498, 0), 30: (629, 0),
          32: (695, 105), 33: (695, 170), 35: (695, 301), 36: (695, 367), 38: (695, 499), 40: (695, 630)}
         return property_positions[self.position]
-    def get_house_count(self):
-        return self.house_count
 
 
 class PropertyButton(pygame.sprite.Sprite):
@@ -105,10 +108,10 @@ class PropertyButton(pygame.sprite.Sprite):
         return property_positions[self.position]
     def mouseOn(self, mousePos):
         if self.position in self.vertical_buttons:
-            if self.get_position(self.position)[0] < mousePos[0] < self.get_position(self.position)[0] + 65 and self.get_position(self.position)[1] < mousePos[1] < self.get_position(self.position)[1] + 110:
+            if self.get_position()[0] < mousePos[0] < self.get_position()[0] + 65 and self.get_position()[1] < mousePos[1] < self.get_position()[1] + 110:
                 return True
         else:
-            if self.get_position(self.position)[0] < mousePos[0] < self.get_position(self.position)[0] + 110 and self.get_position(self.position)[1] < mousePos[1] < self.get_position(self.position)[1] + 65:
+            if self.get_position()[0] < mousePos[0] < self.get_position()[0] + 110 and self.get_position()[1] < mousePos[1] < self.get_position()[1] + 65:
                 return True
         return False
 
@@ -722,10 +725,6 @@ async def playerTurn(player, rolls):
     actionChosen = True
     clickedAction = False
     
-    
-    
-    
-    
     onUnownedProperty = player.position in property_objects
     while waitToEndTurn:
         #if hit x button
@@ -793,9 +792,15 @@ async def playerTurn(player, rolls):
         for prop in player.properties:
             propertyPositionsList.append(prop.position)
         set_of_monopolies = find_monopoly_set(propertyPositionsList)
-        if set_of_monopolies:
+        monopolyProperties = []
+        for p in player.properties:
+            if p.isRailroad == False:
+                monopolyProperties.append(PropertyButton(p.position, player.playerNumber))
+        test = True
+        #if set_of_monopolies:
+        if test:
             #if clicked on buttons buy house/hotel
-            for button in buttonsToDraw:
+            for button in monopolyProperties:
                 if button.mouseOn(mousePos):
                     if pygame.mouse.get_pressed()[0] == True:
                         endTurnClicked = True
@@ -819,6 +824,15 @@ async def playerTurn(player, rolls):
                                     if p.house_count >= 5:
                                         p.house_count = 0
                                         p.hotel_count = 1
+        #draw houses
+        house_sprites = pygame.sprite.Group()
+        for prop in player.properties:
+            if prop.isRailroad == False:
+                house_sprites.add(house(prop.position, prop.house_count, prop.hotel_count))
+        for i in house_sprites:
+            for j in range(len(i.surfList)):
+                window.blit(i.surfList[j], i.rectList[j])
+                    
         if onUnownedProperty == False:
             #if clicked on end turn button
             if 200 <= mousePos[0] <= 400 and 450 <= mousePos[1] <= 550: 
@@ -830,10 +844,9 @@ async def playerTurn(player, rolls):
                         endTurnClicked = False
                         waitToEndTurn = False
                         gameAnnouncementText = font.render(f"   ", True, (0,0,0))
+                        
+                        
         await asyncio.sleep(0)  # Let other tasks run
-
- #           for i in range(len(buttonsToDraw)):
- #               all_sprites.remove(buttonsToDraw[i])
 
 
 
@@ -846,6 +859,7 @@ async def main():
     global turnCounter
     global rolls
     
+    gameOver = False
     while True:
         window.blit(bg_img,(0,0))
         for event in pygame.event.get():
@@ -878,12 +892,13 @@ async def main():
         for player in players:
             for prop in player.properties:
                 if prop.isRailroad == False:
-                    house_sprites.add(house(prop.position, prop.house_count))
+                    house_sprites.add(house(prop.position, prop.house_count, prop.hotel_count))
             for i in house_sprites:
                 for j in range(len(i.surfList)):
                     window.blit(i.surfList[j], i.rectList[j])
 
-
+        #if player run out of money
+        
         #if hit button
         if 200 <= mousePos[0] <= 400 and 450 <= mousePos[1] <= 550: 
             if pygame.mouse.get_pressed()[0] == True:
@@ -907,13 +922,22 @@ async def main():
                     turnCounter += 1
                     if turnCounter >= playerCount:
                         turnCounter = 0
-
+        
+        if gameOver:
+            gameAnnouncementText = font.render(f"Player 1 Loses", True, (0,0,0))
+            gameAnnouncement_rect = gameAnnouncementText.get_rect()
+            gameAnnouncement_rect.center = (400, 300)
+            endText = font.render("Graphics Design is My Passion!", True, (0,0,0))
+            endTextRect = endText.get_rect()
+            endTextRect.center = (400, 350)
+            window.blit(endText, endTextRect)
+            #window.blit(gameAnnouncementText, gameAnnouncement_rect)
+        
+        
         #display sprites
         for entity in all_sprites:
             window.blit(entity.surf, entity.rect)
-
         pygame.display.update()
         await asyncio.sleep(0)  # This line is critical; ensure you keep the sleep time at 0
-
 asyncio.run(main())
 
