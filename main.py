@@ -55,7 +55,7 @@ auctionButton = auction()
 class PropertyButton(pygame.sprite.Sprite):
     def __init__(self, position):
         super().__init__()
-        self.vertical_buttons = [2, 4, 6, 9, 10, 22, 24, 25, 27, 28, 30]
+        self.vertical_buttons = [2, 4, 7, 9, 10, 22, 24, 25, 27, 28, 30] # changed 6 to 7 in this list for light blues
         if position in self.vertical_buttons:
             self.image = pygame.Surface((65, 105), pygame.SRCALPHA)
         else:
@@ -81,7 +81,8 @@ class PropertyButton(pygame.sprite.Sprite):
                 return True
         return False
 
-    
+# added spaces to include railroads and utilities for drawing ownership rectangles
+spaces = [2, 4, 6, 7, 9, 10, 12, 13, 14, 15, 16, 17, 19, 20, 22, 24, 25, 26, 27, 28, 29, 30, 32, 33, 35, 36, 38, 40]
 property_numbers = [2, 4, 7, 9, 10, 12, 14, 15, 17, 19, 20, 22, 24, 25, 27, 28, 30, 32, 33, 35, 38, 40]
 property_buttons = [PropertyButton(position) for position in property_numbers]
 
@@ -396,7 +397,7 @@ class Player(pygame.sprite.Sprite):
     
 P1 = Player()
 P1.playerNumber = 1
-P1.surf.fill((0,0,0))
+P1.surf.fill((255,0,0))
 P2 = Player()
 P2.playerNumber = 2
 P2.surf.fill((0,0,255))
@@ -728,7 +729,8 @@ async def playerTurn(player, rolls):
                                     if p.house_count >= 5:
                                         p.house_count = 0
                                         p.hotel_count = 1
-            await asyncio.sleep(0)  # Let other tasks run
+            # await line was here, moved it to end of while loop
+            
             
             if 200 <= mousePos[0] <= 400 and 450 <= mousePos[1] <= 550: 
                 if pygame.mouse.get_pressed()[0] == True:
@@ -738,6 +740,9 @@ async def playerTurn(player, rolls):
                     if pygame.mouse.get_pressed()[0] == False:
                         endTurnClicked = False
                         waitToEndTurn = False
+                        
+            await asyncio.sleep(0)  # Let other tasks run
+        
         for i in range(len(buttonsToDraw)):
             all_sprites.remove(buttonsToDraw[i])
             
@@ -768,6 +773,15 @@ async def main():
         window.blit(moneyText1, text_rect1)
         window.blit(moneyText2, text_rect2)
         window.blit(gameAnnouncementText, gameAnnouncement_rect)
+        
+        #add property ownership indicators
+        vertical_spaces = [2, 4, 6, 7, 9, 10, 22, 24, 25, 26, 27, 28, 29, 30]
+        for prop in P1.properties:
+            propertyPositionsList.append(prop.position)
+            
+        for prop in P2.properties:
+            propertyPositionsList.append(prop.position)
+        
         #mouse coords
         mousePos = pygame.mouse.get_pos()
         rolls = [roll.dice_roll(), roll.dice_roll()]  
