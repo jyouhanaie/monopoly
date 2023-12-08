@@ -9,7 +9,7 @@ import asyncio
 
 # Use the hash of the seed to get a random number
 
-
+random.seed()
 pygame.init()
 vec = pygame.math.Vector2  # 2 for two dimensional
  
@@ -51,7 +51,6 @@ class auction(pygame.sprite.Sprite):
 buyButton = buy()
 auctionButton = auction()
 
-
 class house(pygame.sprite.Sprite):
     def __init__(self, position, house_count, hotel_count):
         super().__init__()
@@ -66,7 +65,6 @@ class house(pygame.sprite.Sprite):
         self.position = position
         self.house_count = house_count
         self.hotel_count = hotel_count
-        #'''
         if self.position in self.buttons1:
             if self.hotel_count == 1:
                 self.surfList = [pygame.Surface((20,15))]
@@ -115,20 +113,6 @@ class house(pygame.sprite.Sprite):
                     leftPosition = self.get_position()
                     leftPosition = (leftPosition[0] + 5, leftPosition[1] - (i*13) + 50)
                     self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
-        #'''
-        '''
-        if self.hotel_count == 1:
-            self.surfList = [pygame.Surface((15,20))]
-            self.surfList[0].fill((255,0,0))
-            self.rectList = [self.surfList[0].get_rect(topleft = (self.get_position()[0] + 10, self.get_position()[1] + 10))]
-        else:
-            for i in range(house_count):
-                self.surfList.append(pygame.Surface((10, 10)))
-                self.surfList[i].fill((0,255,0))
-                leftPosition = self.get_position()
-                leftPosition = (leftPosition[0] + 10, leftPosition[1] + (i*13) + 10)
-                self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
-        '''
     def get_position(self):
         # Define positions for different Monopoly properties
         property_positions = {2: (630, 695), 4: (499, 695), 6: (368, 695), 7: (302, 695), 9: (171, 695), 10: (105, 695), 
@@ -148,7 +132,7 @@ class PropertyButton(pygame.sprite.Sprite):
             self.image = pygame.Surface((65, 105), pygame.SRCALPHA)
         else:
             self.image = pygame.Surface((105,65), pygame.SRCALPHA)
-        self.colorDict = [(255, 0, 0, 50), (0, 0, 255, 50), ( 0, 255, 0, 50) , (255, 255, 0, 50)]
+        self.colorDict = [(255, 0, 0, 100), (0, 0, 255, 100), ( 0, 255, 0, 100) , (255, 255, 0, 100)]
         self.image.fill(self.colorDict[playerNumber - 1])
         
         self.position = position
@@ -232,6 +216,8 @@ class Railroad(Space):
         self.hotel_count = 0
         self.rent_costs = [25, 50, 100, 200]
         self.isRailroad = True
+        self.mortgaged = False
+        
         super().__init__(*args, **kwargs)
     def get_rent_cost(self):
         return self.rent_costs[self.house_count]
@@ -373,14 +359,15 @@ chance_positions = [8, 23, 27]
 community_chest_positions = [3, 18, 34]
 
 color_groups = {
-    "Brown": [1, 3],
-    "Light Blue": [6, 8, 9],
-    "Pink": [11, 13, 14],
-    "Orange": [16, 18, 19],
-    "Red": [21, 23, 24],
-    "Yellow": [26, 27, 29],
-    "Green": [31, 32, 34],
-    "Dark Blue": [37, 39]}
+    "Brown": [2, 4],
+    "Light Blue": [7, 9, 10],
+    "Pink": [12, 14, 15],
+    "Orange": [17, 19, 20],
+    "Red": [22, 24, 25],
+    "Yellow": [27, 28, 30],
+    "Green": [32, 33, 35],
+    "Blue": [38, 40]}
+
 
 def find_monopoly_set(property_positions):
     for color, positions in color_groups.items():
@@ -388,6 +375,13 @@ def find_monopoly_set(property_positions):
             return [position for position in positions if position in property_positions]
     return []
 
+def find_monopoly_sets_separated(property_positions):
+    all_sets = []
+    for color, positions in color_groups.items():
+        if all(position in property_positions for position in positions):
+            color_set = [position for position in positions if position in property_positions]
+            all_sets.append(sorted(color_set))
+    return all_sets
 
 
 space_dict = {
@@ -513,6 +507,9 @@ text_rect2.center = (600, 200)
 gameAnnouncementText = font.render("    ", True, (0,0,0))
 gameAnnouncement_rect = gameAnnouncementText.get_rect()
 gameAnnouncement_rect.center = (400,425)
+
+morgagedIndicators = []
+morgagedIndicatorRects = []
 
 
 all_sprites = pygame.sprite.Group()
@@ -779,6 +776,7 @@ async def playerTurn(player, rolls):
     buyHouseClicked = False
     actionChosen = True
     clickedAction = False
+    sellPropertyClicked = False
     
     onUnownedProperty = player.position in property_objects
     while waitToEndTurn:
@@ -848,12 +846,24 @@ async def playerTurn(player, rolls):
             propertyPositionsList.append(prop.position)
         set_of_monopolies = find_monopoly_set(propertyPositionsList)
         monopolyProperties = []
-        for p in player.properties:
-            if p.isRailroad == False:
-                monopolyProperties.append(PropertyButton(p.position, player.playerNumber))
-        test = True
-        #if set_of_monopolies:
-        if test:
+        colorSet = find_monopoly_sets_separated(propertyPositionsList)
+        if colorSet:
+            propertySet = []   
+            for i in colorSet:
+                tempColorSet = []
+                for p in player.properties:
+                    if p.position in i:
+                        tempColorSet.append(p)
+                propertySet.append(tempColorSet)
+            for i in propertySet:
+                houseCounts = []
+                for j in i:
+                    houseCounts.append(j.house_count)
+                maxHouses = min(houseCounts) + 1   
+                for k in i:
+                    if k.house_count < maxHouses:
+                        monopolyProperties.append(PropertyButton(k.position, player.playerNumber))
+        if set_of_monopolies:
             #if clicked on buttons buy house/hotel
             for button in monopolyProperties:
                 if button.mouseOn(mousePos):
@@ -879,9 +889,71 @@ async def playerTurn(player, rolls):
                                     if p.house_count >= 5:
                                         p.house_count = 0
                                         p.hotel_count = 1
-        
-        #drawPropertyButtons()
-        
+                                        
+        #sell house/mortgage property
+        allProperties = []
+        global morgagedIndicators
+        global morgagedIndicatorRects
+        for p in player.properties:
+            allProperties.append(PropertyButton(p.position, player.playerNumber))
+            
+        morgagedIndicators = []
+        morgagedIndicatorRects = []
+        for button in allProperties:
+            for p in player.properties:
+                if p.position == button.position:
+                    if p.mortgaged == True:
+                        Mfont = font.render("M", True, (255,140,0))
+                        morgagedIndicators.append(Mfont)
+                        MfontRect = Mfont.get_rect()
+                        tempTuple = button.get_position()
+                        MfontRect.center = (tempTuple[0] + 20, tempTuple[1] + 20)
+                        morgagedIndicatorRects.append(MfontRect)
+                    if button.mouseOn(mousePos):
+                        if pygame.mouse.get_pressed()[2] == True:
+                            sellPropertyClicked = True
+                        if sellPropertyClicked:
+                            #if released button, do action
+                            if pygame.mouse.get_pressed()[2] == False:
+                                sellPropertyClicked = False
+                                for p in player.properties:
+                                    if p.position == button.position:
+                                        houseCost = 0
+                                        #if property has house or hotel
+                                        if p.hotel_count == 1 or p.house_count >= 1 and p.isRailroad == False:
+                                            if p.color == "Brown" or p.color == "Light Blue":
+                                                houseCost = 50
+                                            elif p.color == "Purple" or p.color == "Orange":
+                                                houseCost = 100
+                                            elif p.color == "Red" or p.color == "Yellow":
+                                                houseCost = 150
+                                            elif p.color == "Green" or p.color == "Blue":
+                                                houseCost = 200
+                                            player.cash += (houseCost / 2)
+                                            if p.hotel_count == 1:
+                                                p.hotel_count = 0
+                                                p.house_count = 4
+                                            else:
+                                                p.house_count -=1
+                                        #if property is not mortgaged, mortgage property
+                                        elif p.mortgaged == False:
+                                            p.mortgaged = True
+                                            player.cash += (p.cost / 2)
+                                        # if property is already mortgaged, unmortgage
+                                        elif p.mortgaged == True:
+                                            p.mortgaged = False
+                                            player.cash -= (p.cost / 2 * 1.1)
+                                    
+        #draw M for mortgaged properties
+        for i in range(len(morgagedIndicators)):
+            window.blit(morgagedIndicators[i], morgagedIndicatorRects[i])    
+            
+        #update display text
+        if player.playerNumber == 1:    
+            moneyText1 = font.render(f"${player.cash}", True, (0, 0, 0))
+        elif player.playerNumber == 2:
+            moneyText2 = font.render(f"${player.cash}", True, (0, 0, 0))
+
         #draw houses
         house_sprites = pygame.sprite.Group()
         for prop in player.properties:
@@ -916,8 +988,11 @@ async def main():
     global playerCount
     global turnCounter
     global rolls
+    global morgagedIndicators
+    global morgagedIndicatorRects
     
     gameOver = False
+    playerLoseString = ""
     while True:
         window.blit(bg_img,(0,0))
         for event in pygame.event.get():
@@ -943,8 +1018,6 @@ async def main():
         #window.blit(gameAnnouncementText, gameAnnouncement_rect)
         
         drawPropertyButtons()
-        
-
         #draw houses
         house_sprites = pygame.sprite.Group()
         for player in players:
@@ -954,9 +1027,17 @@ async def main():
             for i in house_sprites:
                 for j in range(len(i.surfList)):
                     window.blit(i.surfList[j], i.rectList[j])
-
+                    
+        #draw M for mortgaged properties
+        for i in range(len(morgagedIndicators)):
+            window.blit(morgagedIndicators[i], morgagedIndicatorRects[i])    
+            
         #if player run out of money
-        
+        for p in players:
+            if p.cash < 0:
+                #gameOver = True
+                playerLoserString = p.playerNumber
+                
         #if hit button
         if 200 <= mousePos[0] <= 400 and 450 <= mousePos[1] <= 550: 
             if pygame.mouse.get_pressed()[0] == True:
@@ -969,25 +1050,26 @@ async def main():
                     gameAnnouncementText = font.render(f"  ", True, (0,0,0))
                     #roll twice
                     rolls = [roll.dice_roll(), roll.dice_roll()]  
-                    print (rolls)
                     #turn counter for keeping track of whose turn it is
                     #playerTurn = turn action function
-                    await playerTurn(players[turnCounter], rolls)
-                    print(players[turnCounter].list_properties())
+                    if gameOver == False:
+                        await playerTurn(players[turnCounter], rolls)
                     if players[turnCounter].rolledDoubles:
                         turnCounter -= 1
 
                     turnCounter += 1
                     if turnCounter >= playerCount:
                         turnCounter = 0
-        
+
+                    
         if gameOver:
-            gameAnnouncementText = font.render(f"Player 1 Loses", True, (0,0,0))
+            displayText = "Player" + playerLoseString + "Loses"
+            gameAnnouncementText = font.render(displayText, True, (0,0,0))
             gameAnnouncement_rect = gameAnnouncementText.get_rect()
             gameAnnouncement_rect.center = (400, 300)
             endText = font.render("Graphics Design is My Passion!", True, (0,0,0))
             endTextRect = endText.get_rect()
-            endTextRect.center = (400, 350)
+            endTextRect.center = (400, 700)
             window.blit(endText, endTextRect)
             #window.blit(gameAnnouncementText, gameAnnouncement_rect)
         
