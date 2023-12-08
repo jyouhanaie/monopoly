@@ -127,7 +127,7 @@ class PropertyButton(pygame.sprite.Sprite):
     
     def __init__(self, position, playerNumber):
         super().__init__()
-        self.vertical_buttons = [2, 4, 6, 7, 9, 10, 22, 24, 25, 26, 27, 28, 30] # changed 6 to 7 in this list for light blues
+        self.vertical_buttons = [2, 4, 6, 7, 9, 10, 22, 24, 25, 26, 27, 28, 30, 29] # changed 6 to 7 in this list for light blues
         if position in self.vertical_buttons:
             self.image = pygame.Surface((65, 105), pygame.SRCALPHA)
         else:
@@ -143,7 +143,8 @@ class PropertyButton(pygame.sprite.Sprite):
         property_positions = {2: (630, 695), 4: (499, 695), 6: (368, 695), 7: (302, 695), 9: (171, 695), 10: (105, 695), 
          12: (0, 630), 14: (0, 499), 15: (0, 433), 16: (0, 367), 17: (0, 301), 19: (0, 170), 20: (0, 104),
          22: (105, 0), 24: (236, 0), 25: (301, 0), 26: (367, 0), 27: (434, 0), 28: (498, 0), 30: (629, 0),
-         32: (695, 105), 33: (695, 170), 35: (695, 301), 36: (695, 367), 38: (695, 499), 40: (695, 630)}
+         32: (695, 105), 33: (695, 170), 35: (695, 301), 36: (695, 367), 38: (695, 499), 40: (695, 630),
+         13: (0, 565), 29: (565, 0)}
         return property_positions[self.position]
     def mouseOn(self, mousePos):
         if self.position in self.vertical_buttons:
@@ -159,6 +160,10 @@ spaces = [2, 4, 6, 7, 9, 10, 12, 13, 14, 15, 16, 17, 19, 20, 22, 24, 25, 26, 27,
 property_numbers = [2, 4, 7, 9, 10, 12, 14, 15, 17, 19, 20, 22, 24, 25, 27, 28, 30, 32, 33, 35, 38, 40]
 #property_buttons = [PropertyButton(position) for position in property_numbers]
 
+row1 = [2, 4, 6, 7, 9, 10]
+row2 = [12, 13, 14, 15, 16, 17, 19, 20]
+row3 = [22, 24, 25, 26, 27, 28, 29, 30]
+row4 = [32, 33, 35, 36, 38, 40]
 
 class Space():
     def __init__(self, name, position):
@@ -222,38 +227,13 @@ class Railroad(Space):
     def get_rent_cost(self):
         return self.rent_costs[self.house_count]
         
-class Utility(Property):
+class Utility(Space):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-
-class Chance(Space):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        
-class Community_Chest(Space):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-    
-class Jail(Space):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        
-class Go_FreeParking_IncomeTax(Space):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        
-class Go_to_Jail(Space):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-
-class Jail_or_Just_Visiting(Space):
-    def __init__(self, *args, **kwargs):
+        self.cost = 150
+        self.mortgaged = False
+        self.isRailroad = True
+        self.house_count = 0
+        self.hotel_count = 0
         super().__init__(*args, **kwargs)
         
 mediterranean_avenue = Property("Brown", 60, [2, 10, 30, 90, 160, 250], "Mediterranean Avenue", 2)
@@ -283,6 +263,9 @@ reading_railroad = Railroad(200, "Reading Railroad", 6)
 pennsylvania_railroad = Railroad(200, "Pennsylvania Railroad", 16)
 b_o_railroad = Railroad(200, "B&O Railroad", 26)
 short_line_railroad = Railroad(200, "Short Line Railroad", 36)
+
+electric_company = Utility("Electric Company", 13)
+water_works = Utility("Water Works", 29)
 
 chance_cards = ["Advance to Go (Collect $200)", 
                 "Advance to Illinois Avenue. If you pass Go, collect $200", 
@@ -324,7 +307,6 @@ random.shuffle(chance_cards)
 random.shuffle(community_chest_cards)
 
 
-
 property_objects = {
     2: mediterranean_avenue,
     4: baltic_avenue,
@@ -352,6 +334,8 @@ property_objects = {
     16: pennsylvania_railroad,
     26: b_o_railroad,
     36: short_line_railroad,
+    13: electric_company,
+    29: water_works
 }
 property_positions = list(property_objects.keys())
 
@@ -579,7 +563,13 @@ async def playerTurn(player, rolls):
         else:
             player.rolledDoubles = False
             player.doublesCounter = 0
+            
+        roll_sum = rolls[0] + rolls[1]
+        player.add_position(roll_sum)
+        player.move(player.position_to_coordinates(player.position))
+
         #if 3 consecutive doubles or if lands on Go to Jail
+        
         if player.doublesCounter >= 3 or player.position == 31:
             player.position = 11
             player.move(player.position_to_coordinates(player.position))
@@ -589,11 +579,6 @@ async def playerTurn(player, rolls):
             player.doublesCounter = 0
         #if not 3 consecutive doubles
         else:
-            roll_sum = rolls[0] + rolls[1]
-            player.add_position(roll_sum)
-            player.move(player.position_to_coordinates(player.position))
-            
-            
             #income tax
             if player.position == 5:
                 player.cash -= 200
@@ -603,7 +588,7 @@ async def playerTurn(player, rolls):
                 gameAnnouncement_rect.center = (400,150)
                 window.blit(gameAnnouncementText, gameAnnouncement_rect)
             #if luxary tax
-            if player.position == 39:
+            elif player.position == 39:
                 player.cash -= 100
                 action = "Luxury Tax bitch"
                 gameAnnouncementText = font.render(f"{action}", True, (0,0,0))
@@ -611,7 +596,7 @@ async def playerTurn(player, rolls):
                 gameAnnouncement_rect.center = (400,150)
                 window.blit(gameAnnouncementText, gameAnnouncement_rect)
             # community chest cards                    
-            if player.position in community_chest_positions:
+            elif player.position in community_chest_positions:
                 # get card action, move card to the back of the list
                 action = community_chest_cards[0]
                 community_chest_cards.append(action)
@@ -674,7 +659,7 @@ async def playerTurn(player, rolls):
                     player.cash += 100
             
             # chance cards                    
-            if player.position in chance_positions:
+            elif player.position in chance_positions:
                 # get card action, move card to the back of the list
                 action = chance_cards[0]
                 chance_cards.append(action)
@@ -692,33 +677,33 @@ async def playerTurn(player, rolls):
                 elif action == "Advance to Illinois Avenue. If you pass Go, collect $200":
                     if player.position == 37:
                         player.cash += 200
-                    player.position == 25
+                    player.position = 25
                     player.move(player.position_to_coordinates(player.position))
                 elif action == "Advance to St. Charles Place. If you pass Go, collect $200":
                     if player.position in [23, 37]:
                         player.cash += 200
-                    player.position == 12
+                    player.position = 12
                     player.move(player.position_to_coordinates(player.position))
                 elif action == "Advance token to nearest Utility. If unowned, you may buy it from the Bank. If owned, throw dice and pay owner a total ten times amount thrown.":
                     if player.position == 8:
-                        player.position == 13
+                        player.position = 13
                         player.move(player.position_to_coordinates(player.position))
                     elif player.position == 23:
-                        player.position == 29
+                        player.position = 29
                         player.move(player.position_to_coordinates(player.position))
                     elif player.position == 37:
-                        player.position == 13
+                        player.position = 13
                         player.move(player.position_to_coordinates(player.position))
                         player.cash += 200
                 elif action == "Advance to the nearest Railroad. If unowned, you may buy it from the Bank. If owned, pay wonder twice the rental to which they are otherwise entitled":
                     if player.position == 8:
-                        player.position == 16
+                        player.position = 16
                         player.move(player.position_to_coordinates(player.position))
                     elif player.position == 23:
-                        player.position == 26
+                        player.position = 26
                         player.move(player.position_to_coordinates(player.position))
                     elif player.position == 37:
-                        player.position == 6
+                        player.position = 6
                         player.move(player.position_to_coordinates(player.position))
                         player.cash += 200
                 elif action == "Bank pays you dividend of $50":
@@ -745,10 +730,10 @@ async def playerTurn(player, rolls):
                 elif action == "Speeding fine $15":
                     player.cash -= 15
                 elif action == "Take a trip to Reading Railroad. If you pass Go, collect $200":
-                    player.position == 6
+                    player.position = 6
                     player.cash += 200
                 elif action == "Advance to Boardwalk":
-                    player.position == 40
+                    player.position = 40
                 elif action == "You have been elected Chairman of the Board. Pay each player $50":
                     player.cash -= (50 * (playerCount - 1))
                     for p in range(1, playerCount):
@@ -756,15 +741,27 @@ async def playerTurn(player, rolls):
                             players[p - 1].cash -= 10
                 elif action == "Your building loan matures. Collect $150":
                     player.cash += 150
-            
             #if landed in an owned property/railroad space
             for p in players:
                 if p.playerNumber != player.playerNumber:
                     for opponentProperty in p.properties:
                         if player.position == opponentProperty.position:
-                            rentToPay = opponentProperty.get_rent_cost()
+                            #if landed on owned utilities
+                            if player.position == 13:
+                                if electric_company in p.properties:
+                                    rentToPay = 10 * (rolls[0] + rolls[1])
+                                else:
+                                    rentToPay = 4 + (rolls[0] + rolls[1])
+                            elif player.position == 29:
+                                if water_works in p.properties:
+                                    rentToPay = 10 * (rolls[0] + rolls[1])
+                                else:
+                                    rentToPay = 4 + (rolls[0] + rolls[1])
+                            else:
+                                rentToPay = opponentProperty.get_rent_cost()
                             player.cash -= rentToPay
                             print(f"paid {rentToPay} for rent")
+
                             
     if player.playerNumber == 1:    
         moneyText1 = font.render(f"${player.cash}", True, (0, 0, 0))
@@ -858,8 +855,8 @@ async def playerTurn(player, rolls):
             for i in propertySet:
                 houseCounts = []
                 for j in i:
-                    houseCounts.append(j.house_count)
-                maxHouses = min(houseCounts) + 1   
+                    houseCounts.append(j.house_count + 5 * j.hotel_count)
+                maxHouses = min(min(houseCounts) + 1, 5)
                 for k in i:
                     if k.house_count < maxHouses:
                         monopolyProperties.append(PropertyButton(k.position, player.playerNumber))
@@ -899,15 +896,51 @@ async def playerTurn(player, rolls):
             
         morgagedIndicators = []
         morgagedIndicatorRects = []
+        propertyPositionsList = []
+        sellableProperties = []
+        mortgageableProperties = []
+        for prop in player.properties:
+            propertyPositionsList.append(prop.position)
+        set_of_monopolies = find_monopoly_set(propertyPositionsList)
+        for q in player.properties:
+            if q.position not in set_of_monopolies:
+                mortgageableProperties.append(q)
+        colorSet = find_monopoly_sets_separated(propertyPositionsList)
+        if colorSet:
+            propertySet = []   
+            for i in colorSet:
+                tempPropSet = []
+                for p in player.properties:
+                    if p.position in i:
+                        tempPropSet.append(p)
+                propertySet.append(tempPropSet)
+            for i in propertySet:
+                houseCounts = []
+                for j in i:
+                    houseCounts.append(j.house_count + 5 * j.hotel_count)
+                minHouses = max(max(houseCounts) - 1, -1)
+                for k in i:
+                    if k.house_count > minHouses:
+                        if k.house_count > 0:
+                            sellableProperties.append(k)
+                        if k.house_count == 0:
+                            mortgageableProperties.append(k)
         for button in allProperties:
             for p in player.properties:
-                if p.position == button.position:
+                if p.position == button.position: #maybe unnecessary
                     if p.mortgaged == True:
                         Mfont = font.render("M", True, (255,140,0))
                         morgagedIndicators.append(Mfont)
                         MfontRect = Mfont.get_rect()
                         tempTuple = button.get_position()
-                        MfontRect.center = (tempTuple[0] + 20, tempTuple[1] + 20)
+                        if p.position in row1:
+                            MfontRect.center = (tempTuple[0] + 33, tempTuple[1] + 68)
+                        if p.position in row2:
+                            MfontRect.center = (tempTuple[0] + 38, tempTuple[1] + 33)
+                        if p.position in row3:
+                            MfontRect.center = (tempTuple[0] + 33, tempTuple[1] + 38)
+                        if p.position in row4:
+                            MfontRect.center = (tempTuple[0] + 68, tempTuple[1] + 33)
                         morgagedIndicatorRects.append(MfontRect)
                     if button.mouseOn(mousePos):
                         if pygame.mouse.get_pressed()[2] == True:
@@ -916,34 +949,37 @@ async def playerTurn(player, rolls):
                             #if released button, do action
                             if pygame.mouse.get_pressed()[2] == False:
                                 sellPropertyClicked = False
-                                for p in player.properties:
-                                    if p.position == button.position:
+                                for p2 in player.properties:
+                                    if p2.position == button.position:
                                         houseCost = 0
                                         #if property has house or hotel
-                                        if p.hotel_count == 1 or p.house_count >= 1 and p.isRailroad == False:
-                                            if p.color == "Brown" or p.color == "Light Blue":
+                                        #if p.hotel_count == 1 or p.house_count >= 1 and p.isRailroad == False:
+                                        if p2 in sellableProperties:
+
+                                            if p2.color == "Brown" or p2.color == "Light Blue":
                                                 houseCost = 50
-                                            elif p.color == "Purple" or p.color == "Orange":
+                                            elif p2.color == "Purple" or p2.color == "Orange":
                                                 houseCost = 100
-                                            elif p.color == "Red" or p.color == "Yellow":
+                                            elif p2.color == "Red" or p2.color == "Yellow":
                                                 houseCost = 150
-                                            elif p.color == "Green" or p.color == "Blue":
+                                            elif p2.color == "Green" or p2.color == "Blue":
                                                 houseCost = 200
                                             player.cash += (houseCost / 2)
-                                            if p.hotel_count == 1:
-                                                p.hotel_count = 0
-                                                p.house_count = 4
+                                            if p2.hotel_count == 1:
+                                                p2.hotel_count = 0
+                                                p2.house_count = 4
                                             else:
-                                                p.house_count -=1
+                                                p2.house_count -=1
                                         #if property is not mortgaged, mortgage property
-                                        elif p.mortgaged == False:
-                                            p.mortgaged = True
-                                            player.cash += (p.cost / 2)
+                                        #elif p.mortgaged == False:
+                                        elif p2 in mortgageableProperties:
+                                            p2.mortgaged = True
+                                            player.cash += (p2.cost / 2)
                                         # if property is already mortgaged, unmortgage
-                                        elif p.mortgaged == True:
-                                            p.mortgaged = False
-                                            player.cash -= (p.cost / 2 * 1.1)
-                                    
+                                        elif p2.mortgaged == True:
+                                            p2.mortgaged = False
+                                            player.cash -= (p2.cost / 2 * 1.1)
+
         #draw M for mortgaged properties
         for i in range(len(morgagedIndicators)):
             window.blit(morgagedIndicators[i], morgagedIndicatorRects[i])    
