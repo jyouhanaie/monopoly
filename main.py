@@ -55,6 +55,10 @@ auctionButton = auction()
 class house(pygame.sprite.Sprite):
     def __init__(self, position, house_count, hotel_count):
         super().__init__()
+        self.buttons1 = [2, 4, 6, 7, 9, 10]
+        self.buttons2 = [12, 14, 15, 16, 17, 19, 20]
+        self.buttons3 = [22, 24, 25, 26, 27, 28, 30]
+        self.buttons4 = [32, 33, 35, 36, 38, 40]
         
         self.surfList = []
         self.rectList = []
@@ -62,8 +66,59 @@ class house(pygame.sprite.Sprite):
         self.position = position
         self.house_count = house_count
         self.hotel_count = hotel_count
+        #'''
+        if self.position in self.buttons1:
+            if self.hotel_count == 1:
+                self.surfList = [pygame.Surface((20,15))]
+                self.surfList[0].fill((255,100,100))
+                self.rectList = [self.surfList[0].get_rect(topleft = (self.get_position()[0] + 5, self.get_position()[1] + 5))]
+            else:
+                for i in range(house_count):
+                    self.surfList.append(pygame.Surface((10, 10)))
+                    self.surfList[i].fill((0,255,0))
+                    leftPosition = self.get_position()
+                    leftPosition = (leftPosition[0] + (i*13) + 5, leftPosition[1] + 5)
+                    self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
+        if self.position in self.buttons2:
+            if self.hotel_count == 1:
+                self.surfList = [pygame.Surface((15,20))]
+                self.surfList[0].fill((255,100,100))
+                self.rectList = [self.surfList[0].get_rect(topleft = (self.get_position()[0] + 85, self.get_position()[1] + 5))]
+            else:
+                for i in range(house_count):
+                    self.surfList.append(pygame.Surface((10, 10)))
+                    self.surfList[i].fill((0,255,0))
+                    leftPosition = self.get_position()
+                    leftPosition = (leftPosition[0] + 90, leftPosition[1] + (i*13) + 5)
+                    self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
+        if self.position in self.buttons3:
+            if self.hotel_count == 1:
+                self.surfList = [pygame.Surface((20,15))]
+                self.surfList[0].fill((255,100,100))
+                self.rectList = [self.surfList[0].get_rect(topleft = (self.get_position()[0] + 40, self.get_position()[1] + 85))]
+            else:
+                for i in range(house_count):
+                    self.surfList.append(pygame.Surface((10, 10)))
+                    self.surfList[i].fill((0,255,0))
+                    leftPosition = self.get_position()
+                    leftPosition = (leftPosition[0] - (i*13) + 50, leftPosition[1] + 90)
+                    self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
+        if self.position in self.buttons4:
+            if self.hotel_count == 1:
+                self.surfList = [pygame.Surface((15,20))]
+                self.surfList[0].fill((255,100,100))
+                self.rectList = [self.surfList[0].get_rect(topleft = (self.get_position()[0] + 5, self.get_position()[1] + 50))]
+            else:
+                for i in range(house_count):
+                    self.surfList.append(pygame.Surface((10, 10)))
+                    self.surfList[i].fill((0,255,0))
+                    leftPosition = self.get_position()
+                    leftPosition = (leftPosition[0] + 5, leftPosition[1] - (i*13) + 50)
+                    self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
+        #'''
+        '''
         if self.hotel_count == 1:
-            self.surfList = [pygame.Surface((20,15))]
+            self.surfList = [pygame.Surface((15,20))]
             self.surfList[0].fill((255,0,0))
             self.rectList = [self.surfList[0].get_rect(topleft = (self.get_position()[0] + 10, self.get_position()[1] + 10))]
         else:
@@ -73,7 +128,7 @@ class house(pygame.sprite.Sprite):
                 leftPosition = self.get_position()
                 leftPosition = (leftPosition[0] + 10, leftPosition[1] + (i*13) + 10)
                 self.rectList.append(self.surfList[i].get_rect(topleft = leftPosition))
-            
+        '''
     def get_position(self):
         # Define positions for different Monopoly properties
         property_positions = {2: (630, 695), 4: (499, 695), 6: (368, 695), 7: (302, 695), 9: (171, 695), 10: (105, 695), 
@@ -93,7 +148,7 @@ class PropertyButton(pygame.sprite.Sprite):
             self.image = pygame.Surface((65, 105), pygame.SRCALPHA)
         else:
             self.image = pygame.Surface((105,65), pygame.SRCALPHA)
-        self.colorDict = [(255, 0, 0, 100), (0, 0, 255, 100), ( 0, 255, 0, 100) , (255, 255, 0, 100)]
+        self.colorDict = [(255, 0, 0, 50), (0, 0, 255, 50), ( 0, 255, 0, 50) , (255, 255, 0, 50)]
         self.image.fill(self.colorDict[playerNumber - 1])
         
         self.position = position
@@ -824,6 +879,9 @@ async def playerTurn(player, rolls):
                                     if p.house_count >= 5:
                                         p.house_count = 0
                                         p.hotel_count = 1
+        
+        #drawPropertyButtons()
+        
         #draw houses
         house_sprites = pygame.sprite.Group()
         for prop in player.properties:
