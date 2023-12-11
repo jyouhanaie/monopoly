@@ -741,8 +741,15 @@ async def playerTurn(player, rolls):
         await asyncio.sleep(0)  # Let other tasks run
 
 
-#mian functino
 async def main():
+    """
+    Runs the main game loop 
+
+    Parameters:
+    None
+    Returns:
+    None
+    """
     #explicitly use the existing global variables
     global clicked
     global gameAnnouncementText
