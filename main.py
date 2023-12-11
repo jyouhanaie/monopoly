@@ -760,10 +760,10 @@ async def main():
     global rolls
     global morgagedIndicators
     global morgagedIndicatorRects
-    
+    playerLoseString = 0
     #bool for if the game a player has lost
     gameOver = False
-    playerLoseString = ""
+    
     
     #main game update function
     while True:
@@ -806,7 +806,7 @@ async def main():
         for p in players:
             if p.cash < 0:
                 gameOver = True
-                playerLoserString = p.playerNumber
+                playerLoseString = p.playerNumber
                 
         #if hit dice button
         if 200 <= mousePos[0] <= 400 and 450 <= mousePos[1] <= 550: 
@@ -837,7 +837,7 @@ async def main():
         #display that the player has lost as an announcement
         #display my life's moto
         if gameOver:
-            displayText = "Player" + playerLoseString + "Loses"
+            displayText = "Player " + str(playerLoseString) + " Loses"
             gameAnnouncementText = font.render(displayText, True, (0,0,0))
             gameAnnouncement_rect = gameAnnouncementText.get_rect()
             gameAnnouncement_rect.center = (400, 300)
