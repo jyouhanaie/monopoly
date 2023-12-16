@@ -1,5 +1,5 @@
 # Monopoly
-This project aims to create a web based playable version of the popular board game Monopoly. The game should be playable by a user or users. Additionally, there will be an option to play with a bot so that a single player can also enjoy the game. This project will use a GUI package and website design to construct the base game, and machine learning to analyze and optimize the bot’s decisions. 
+This project aims to create a web based playable version of the popular board game Monopoly. The game should be playable by a user or users. This project will use the pygame GUI package to construct the game’s graphics. It will also use the pygbag package to implement the pygame graphics and internal game logic on a locally hosted web address that can accept user inputs and implement the corresponding background game logic.
 
 
 # User Guide
