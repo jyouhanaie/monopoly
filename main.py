@@ -4,12 +4,18 @@ from pygame.locals import *
 import random
 import sys
 import asyncio
+'''
 import sprites
 from sprites import *
 import spaces
 from spaces import *
 import helpers
 from helpers import *
+'''
+import myProject
+from myProject.sprites import *
+from myProject.spaces import *
+from myProject.helpers import *
 
 #randomize seed
 random.seed()
