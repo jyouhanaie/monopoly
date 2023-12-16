@@ -4,7 +4,7 @@ This project aims to create a web based playable version of the popular board ga
 
 # User Guide
 Some specialized packages used include pygame, pygbag, asyncio, random, sys, and myProject.
-The conda environment I used for this project is shown in the environment.yml file
+The conda environment I used to test and develop this project is shown in the environment.yml file
 
 
-To run the game on a local host broswer, ensure the myPackage file with its contents is in the same file directory as main.py. Then in your terminal, activate the correct environment, and change directory to the file right before main.py file. Finally, run "pygbag <fileName>" and in your browser, go to http://localhost:8000. Now hit "ready to start" and have fun!
+To run the game on a local host broswer, ensure the myPackage file with its contents is in the same file directory as main.py. Then in your terminal, activate your conda environment, and change directory to the file right before the one main.py is in. Finally, run "pygbag <fileName>" and in your browser, go to http://localhost:8000. Now hit "ready to start" and have fun!
