@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
-import sprites
-from sprites import PropertyButton
+import myProject.sprites
+from myProject.sprites import PropertyButton
 
 # define the color groups to be referenced when finding monopolies
 color_groups = {
